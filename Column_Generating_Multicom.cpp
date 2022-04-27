@@ -192,7 +192,11 @@ class MultiCommodityProb{
 				lp.addRow(temp == c[i]);
 			}
 			if(DEBUG) cout << "SECOND\n";
-			Lp::Expr maxNum; lp.addRow(maxNum == 0);
+			Lp::Expr maxNum;
+			for (int i = number_of_arcs; i < Columns.size(); ++i)
+			{
+				maxNum = maxNum + x[i];
+			}
 			lp.max();
 			lp.obj(maxNum);
 			lp.solve();
@@ -251,12 +255,12 @@ class MultiCommodityProb{
 		
 		
 		vector<double> ColumnGener(vector<ListDigraph::Node> &path) {
-			cout << "VAGYOK\n"<< endl;
+			if(DEBUG_CONDENSED) cout << "VAGYOK\n"<< endl;
 			vector<ListDigraph::Arc> arcs;
 			for(int i = (int)path.size()-1; i > 0; ++i) {
 				arcs.push_back(FindArc(path[i], path[i-1]));
 			}
-			cout << "VAGYOK2\n"<< endl;
+			if(DEBUG_CONDENSED) cout << "VAGYOK2\n"<< endl;
 			int ln = (int)arcs.size();
 			vector<double> column;
 			for(ListDigraph::ArcIt arc(graph_);arc!=INVALID;++arc) {
@@ -271,11 +275,13 @@ class MultiCommodityProb{
 				 column.push_back(1);
 				else column.push_back(0);
 			}
+			if(DEBUG_CONDENSED) cout << "VAGYOK2\n"<< endl;
+			return column;
 		}
 		
 		bool ShorterPath(vector<double> &dl) {
 			ListDigraph &g = graph_;
-			cout << "VAGYOK\n"<< endl;
+			if(DEBUG_CONDENSED) cout << "VAGYOK\n"<< endl;
 			bool okay = true;
 			FOR(i,source_numb_) {
 				ListDigraph::Node si = auxiliary_source_nodes_[i];
@@ -294,7 +300,7 @@ class MultiCommodityProb{
 				dijkstra.start();
 				
 				if(dijkstra.dist(ti) < 1) {
-					cout << "VAGYOK\n"<< endl;
+					if(DEBUG_CONDENSED) cout << "VAGYOK\n"<< endl;
 					vector<ListDigraph::Node> indexes;
 					lemon::ListDigraph::Node curr = ti;
 					while(curr != INVALID) {
