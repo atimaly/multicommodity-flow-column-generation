@@ -250,10 +250,12 @@ class MultiCommodityProb{
 		}
 		
 		/*
-		vector<double> ColumnGener(vector<ListDigraph Node> &path) {
-			vector<ListDigrap::Arc> arcs;
-			FOR(i,(int)path.size()) {
-				}
+		vector<double> ColumnGener(vector<ListDigrap::Node> &path) {
+			vector<ListDigraph::Arc> arcs;
+			int ln = (int)path.size()-1;
+			for(int i = (int)path.size(); i > 0; ++i) {
+				arcs.push_back(FindArc(path[i], path[i-1]));
+			}
 		}
 		
 		vector< ShorterPath(vector<double> &dl) {
@@ -274,7 +276,7 @@ class MultiCommodityProb{
 				dijkstra.start();
 				
 				if(dijkstra.dist(ti) < 1) {
-					vector<int> indexes;
+					vector<ListDigrap::Node> indexes;
 					lemon::ListDigraph::Node curr = ti;
 					while(curr != INVALID) {
 						indexes.push_back(curr);
