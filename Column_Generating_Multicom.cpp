@@ -307,6 +307,7 @@ class MultiCommodityProb{
 						indexes.push_back(curr);
 						curr = dijkstra.predNode(curr);
 					}
+					for(int l = 0; l < (int)indexes.size(); ++l) {cout << graph_.id(indexes[l]) << ", ";}
 					base_columns.push_back(ColumnGener(indexes));
 					okay = false;
 					break;
@@ -335,6 +336,7 @@ int main() {
 	int k = 10;
 	MultiCommodityProb Test(k, fin);
 	cout << Test.all_flow_value << endl;
+	Test.OneIterationOfGeneration();
 	Test.OneIterationOfGeneration();
 	/*
 	vector<vector<double>> columns;
