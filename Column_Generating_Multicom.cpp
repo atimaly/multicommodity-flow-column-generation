@@ -306,7 +306,9 @@ class MultiCommodityProb{
 					while(curr != INVALID) {
 						indexes.push_back(curr);
 						curr = dijkstra.predNode(curr);
+						cout << graph_.id(curr) << ", ";
 					}
+					indexes.push_back(si);
 					for(int l = 0; l < (int)indexes.size(); ++l) {cout << graph_.id(indexes[l]) << ", ";}
 					base_columns.push_back(ColumnGener(indexes));
 					okay = false;
