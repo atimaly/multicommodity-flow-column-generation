@@ -253,10 +253,10 @@ class MultiCommodityProb{
 		vector<double> ColumnGener(vector<ListDigraph::Node> &path) {
 			cout << "VAGYOK\n"<< endl;
 			vector<ListDigraph::Arc> arcs;
-			for(int i = (int)path.size(); i > 0; ++i) {
+			for(int i = (int)path.size()-1; i > 0; ++i) {
 				arcs.push_back(FindArc(path[i], path[i-1]));
 			}
-			
+			cout << "VAGYOK2\n"<< endl;
 			int ln = (int)arcs.size();
 			vector<double> column;
 			for(ListDigraph::ArcIt arc(graph_);arc!=INVALID;++arc) {
