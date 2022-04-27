@@ -87,6 +87,7 @@ class MultiCommodityProb{
 		
 		MultiCommodityProb(int k, istream& in = std::cin): source_numb_{k}, all_flow_value{0}, number_of_arcs{0} {
 			ReadInput(in);
+			AdditionalNodesEdge();
 			for(ListDigraph::ArcIt arc(graph_);arc!=INVALID;++arc) ++number_of_arcs;
 			FillBaseColumns();
 			
@@ -158,16 +159,17 @@ class MultiCommodityProb{
 			FOR(i,k) {
 				auxiliary_source_nodes_.push_back(graph_.addNode());
 			}
+			/*
 			FOR(i,k) {
 				auxiliary_sink_nodes_.push_back(graph_.addNode());
-			}
+			}*/
 			
 			FOR(i,k) {
 				double di = capacities_[FindArc(g.nodeFromId(i), g.nodeFromId(vertex_numb_-i+1))];
 				all_flow_value += di;
 				capacities_[g.addArc(auxiliary_source_nodes_[i], g.nodeFromId(i))] = di;
 				
-				capacities_[g.addArc(auxiliary_sink_nodes_[i], g.nodeFromId(vertex_numb_-i+1))] = di;
+				//capacities_[g.addArc(auxiliary_sink_nodes_[i], g.nodeFromId(vertex_numb_-i+1))] = di;
 			}
 		}
 		
@@ -247,11 +249,48 @@ class MultiCommodityProb{
 			return sol;
 		}
 		
+		/*
+		vector<double> ColumnGener(vector<ListDigraph Node> &path) {
+			vector<ListDigrap::Arc> arcs;
+			FOR(i,(int)path.size()) {
+				}
+		}
+		
+		vector< ShorterPath(vector<double> &dl) {
+			FOR(i,source_numb_) {
+				ListDigraph Node si = auxiliary_source_nodes_[i];
+				ListDigraph Node ti = g.nodeFromId(vertex_numb_-i+1);
+				ListDigraph::NodeMap<double> dist(g);
+				ListDigraph::ArcMap<double> length(g);
+				int j = 0;
+				for(ListDigraph::ArcIt arc(graph_);arc!=INVALID;++arc) length[arc] = dl[j++];
+				Dijkstra<ListDigraph, ListDigraph::ArcMap<double>>
+						  ::Create
+						  dijkstra(g, length);
+				//Dijkstra<ListGraph> dijkstra(g, length);
+				dijkstra.distMap(dist);
+				dijkstra.init();
+				dijkstra.addSource(si);
+				dijkstra.start();
+				
+				if(dijkstra.dist(ti) < 1) {
+					vector<int> indexes;
+					lemon::ListDigraph::Node curr = ti;
+					while(curr != INVALID) {
+						indexes.push_back(curr);
+						curr = dijkstra.predNode(curr);
+					}
+					base_columns.push_back(ColumnGener(indexes));
+				}
+			}
+		}*/
+		
 		void OneIterationOfGeneration() {
 			base_solution = LinearEquationSolver(base_columns, capacities_vectors);
 			if(DEBUG_VALUE) {cout << "BASE SOLUTION: \n"; Print_vector(base_solution);}
-			dual_solution = DualSolution(); 
+			dual_solution = DualSolution();
 			if(DEBUG_VALUE) {cout << "DUAL SOLUTION: \n"; Print_vector(dual_solution);}
+			
 		}
 };
 
