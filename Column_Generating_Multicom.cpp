@@ -249,8 +249,8 @@ class MultiCommodityProb{
 			return sol;
 		}
 		
-		/*
-		vector<double> ColumnGener(vector<ListDigrap::Node> &path) {
+		
+		vector<double> ColumnGener(vector<ListDigraph::Node> &path) {
 			vector<ListDigraph::Arc> arcs;
 			int ln = (int)path.size()-1;
 			for(int i = (int)path.size(); i > 0; ++i) {
@@ -258,10 +258,11 @@ class MultiCommodityProb{
 			}
 		}
 		
-		vector< ShorterPath(vector<double> &dl) {
+		void ShorterPath(vector<double> &dl) {
+			ListDigraph &g = graph_;
 			FOR(i,source_numb_) {
-				ListDigraph Node si = auxiliary_source_nodes_[i];
-				ListDigraph Node ti = g.nodeFromId(vertex_numb_-i+1);
+				ListDigraph::Node si = auxiliary_source_nodes_[i];
+				ListDigraph::Node ti = g.nodeFromId(vertex_numb_-i+1);
 				ListDigraph::NodeMap<double> dist(g);
 				ListDigraph::ArcMap<double> length(g);
 				int j = 0;
@@ -276,7 +277,7 @@ class MultiCommodityProb{
 				dijkstra.start();
 				
 				if(dijkstra.dist(ti) < 1) {
-					vector<ListDigrap::Node> indexes;
+					vector<ListDigraph::Node> indexes;
 					lemon::ListDigraph::Node curr = ti;
 					while(curr != INVALID) {
 						indexes.push_back(curr);
@@ -285,7 +286,7 @@ class MultiCommodityProb{
 					base_columns.push_back(ColumnGener(indexes));
 				}
 			}
-		}*/
+		}
 		
 		void OneIterationOfGeneration() {
 			base_solution = LinearEquationSolver(base_columns, capacities_vectors);
