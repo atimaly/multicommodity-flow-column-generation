@@ -262,6 +262,7 @@ class MultiCommodityProb{
 			}
 			if(DEBUG_CONDENSED) cout << "VAGYOK2\n"<< endl;
 			int ln = (int)arcs.size();
+			cout << "ARCS: " << ln << endl;
 			vector<double> column;
 			for(ListDigraph::ArcIt arc(graph_);arc!=INVALID;++arc) {
 				bool exist = false;
@@ -275,7 +276,10 @@ class MultiCommodityProb{
 				 column.push_back(1);
 				else column.push_back(0);
 			}
-			if(DEBUG_CONDENSED) cout << "VAGYOK2\n"<< endl;
+			if(DEBUG_CONDENSED) cout << "VAGYOK5\n"<< endl;
+			cout << std::accumulate(all(column), 0.) << endl;
+			Print_vector(column);
+			if(DEBUG_CONDENSED) cout << "VAGYOK7\n"<< endl;
 			return column;
 		}
 		
@@ -311,11 +315,12 @@ class MultiCommodityProb{
 					//indexes.push_back(si);
 					if(DEBUG_CONDENSED) cout << "VAGYOK4\n"<< endl;
 					for(int l = 0; l < (int)indexes.size(); ++l) {cout << graph_.id(indexes[l]) << ", ";}
-					Print_vector(ColumnGener(indexes));
+					
 					base_columns.push_back(ColumnGener(indexes));
 					okay = false;
 					break;
 				}
+				if(!okay) break;
 			}
 			return okay;
 		}
