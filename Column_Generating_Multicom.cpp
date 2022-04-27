@@ -301,7 +301,6 @@ int main() {
 	
 	int k = 10;
 	MultiCommodityProb Test(k, fin);
-	Test.AdditionalNodesEdge();
 	cout << Test.all_flow_value << endl;
 	Test.OneIterationOfGeneration();
 	/*
