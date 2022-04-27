@@ -251,15 +251,32 @@ class MultiCommodityProb{
 		
 		
 		vector<double> ColumnGener(vector<ListDigraph::Node> &path) {
+			cout << "VAGYOK\n"<< endl;
 			vector<ListDigraph::Arc> arcs;
-			int ln = (int)path.size()-1;
 			for(int i = (int)path.size(); i > 0; ++i) {
 				arcs.push_back(FindArc(path[i], path[i-1]));
 			}
+			
+			int ln = (int)arcs.size();
+			vector<double> column;
+			for(ListDigraph::ArcIt arc(graph_);arc!=INVALID;++arc) {
+				bool exist = false;
+				FOR(i,ln) {
+					if(arc == arcs[i]) {
+						exist = true;
+						break;
+					}
+				}
+				if(exist)
+				 column.push_back(1);
+				else column.push_back(0);
+			}
 		}
 		
-		void ShorterPath(vector<double> &dl) {
+		bool ShorterPath(vector<double> &dl) {
 			ListDigraph &g = graph_;
+			cout << "VAGYOK\n"<< endl;
+			bool okay = true;
 			FOR(i,source_numb_) {
 				ListDigraph::Node si = auxiliary_source_nodes_[i];
 				ListDigraph::Node ti = g.nodeFromId(vertex_numb_-i+1);
@@ -277,6 +294,7 @@ class MultiCommodityProb{
 				dijkstra.start();
 				
 				if(dijkstra.dist(ti) < 1) {
+					cout << "VAGYOK\n"<< endl;
 					vector<ListDigraph::Node> indexes;
 					lemon::ListDigraph::Node curr = ti;
 					while(curr != INVALID) {
@@ -284,17 +302,23 @@ class MultiCommodityProb{
 						curr = dijkstra.predNode(curr);
 					}
 					base_columns.push_back(ColumnGener(indexes));
+					okay = false;
+					break;
 				}
 			}
+			return okay;
 		}
 		
-		void OneIterationOfGeneration() {
+		bool OneIterationOfGeneration() {
 			base_solution = LinearEquationSolver(base_columns, capacities_vectors);
 			if(DEBUG_VALUE) {cout << "BASE SOLUTION: \n"; Print_vector(base_solution);}
 			dual_solution = DualSolution();
 			if(DEBUG_VALUE) {cout << "DUAL SOLUTION: \n"; Print_vector(dual_solution);}
-			
+			bool okay = ShorterPath(dual_solution);
+			return okay;			
 		}
+		
+		
 };
 
 
