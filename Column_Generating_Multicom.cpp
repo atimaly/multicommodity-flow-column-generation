@@ -20,7 +20,7 @@ using namespace lemon;
 
 
 const bool DEBUG = false; //if(DEBUG)
-const bool DEBUG_CONDENSED = false;
+const bool DEBUG_CONDENSED = true;
 const bool DEBUG_VALUE = true;
 const long long int INF = 10000000000;
 
@@ -306,10 +306,12 @@ class MultiCommodityProb{
 					while(curr != INVALID) {
 						indexes.push_back(curr);
 						curr = dijkstra.predNode(curr);
-						cout << graph_.id(curr) << ", ";
+						cout << "RECURSE: " << graph_.id(curr) << ", ";
 					}
-					indexes.push_back(si);
+					//indexes.push_back(si);
+					if(DEBUG_CONDENSED) cout << "VAGYOK4\n"<< endl;
 					for(int l = 0; l < (int)indexes.size(); ++l) {cout << graph_.id(indexes[l]) << ", ";}
+					Print_vector(ColumnGener(indexes));
 					base_columns.push_back(ColumnGener(indexes));
 					okay = false;
 					break;
