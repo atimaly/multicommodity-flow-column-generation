@@ -18,339 +18,400 @@
 using namespace std;
 using namespace lemon;
 
-
 const bool DEBUG = false; //if(DEBUG)
 const bool DEBUG_CONDENSED = true;
 const bool DEBUG_VALUE = true;
-const long long int INF = 10000000000;
-
-using ll = long long int;
 
 #define all(x) begin(x), end(x)
-#define FOR(i,n) for(int i = 0; i < (n); ++i)
+#define FOR(i, n) for (int i = 0; i < (n); ++i)
 
 template <class C>
-void Print_vector(const C &Original) {
-	for(const auto &v : Original) {
-	    cout << v << " ";
+void Print_vector(const C &Original)
+{
+	for (const auto &v : Original)
+	{
+		cout << v << " ";
 	}
 	cout << endl;
 }
 
-template <class C>
-void Print_Matrix(const vector<vector<C>> &M, bool space = true) {
-	for(int i = 0; i < (int)M.size(); ++i) {
-		for(int j = 0; j < (int)M[i].size(); ++j) {
-			cout << M[i][j]; if(space) cout << " ";
-			}
-	    cout << endl;
+class MultiCommodityProb
+{
+
+public:
+	int vertex_numb_;
+	int source_numb_;
+	double all_flow_value;
+	int number_of_arcs = 0;
+	vector<pair<double, double>> vertex_points_;
+	vector<vector<double>> base_columns;
+	vector<double> base_solution;
+	vector<double> dual_solution;
+	vector<double> capacities_vectors;
+	vector<double> w_row;
+	lemon::ListDigraph graph_;
+	lemon::ListDigraph::ArcMap<double> capacities_{graph_, false};
+	vector<ListDigraph::Node> auxiliary_source_nodes_;
+
+	MultiCommodityProb(int k, istream &in = std::cin) : source_numb_{k}, all_flow_value{0}, number_of_arcs{0}
+	{
+		ReadInput(in);
+		AdditionalNodesEdge();
+		for (ListDigraph::ArcIt arc(graph_); arc != INVALID; ++arc)
+			++number_of_arcs;
+		FillBaseColumns();
+
+		int i = 0;
+		capacities_vectors.resize(number_of_arcs);
+		for (ListDigraph::ArcIt arc(graph_); arc != INVALID; ++arc)
+			capacities_vectors[i++] = capacities_[arc];
+		w_row.resize(number_of_arcs, 0);
 	}
-}
 
-template<class T, class C>
-void Print_pair(const pair<T,C> &M) {
-    cout << "(" << M.first << " , " << M.second << " ) ";
-}
-
-template<class T, class C>
-void Print_Matrix_pair(const vector<vector<pair<T,C>>> &M) {
-	for(int i = 0; i < (int)M.size(); ++i) {
-		cout << i << ": ";
-		for(int j = 0; j < (int)M[i].size(); ++j) {
-			Print_pair(M[i][j]);
+	void AddVertices(int n)
+	{
+		FOR(i, n)
+		{
+			graph_.addNode();
 		}
-	    cout << endl;
 	}
-}
 
+	template <typename T>
+	double EuclidDist(T a, T b)
+	{
+		return sqrt((a.first - b.first) * (a.first - b.first) + (a.second - b.second) * (a.second - b.second));
+	}
 
-class MultiCommodityProb{
-		
-	public:
-		
-		int vertex_numb_;
-		int source_numb_;
-		double all_flow_value;
-		int number_of_arcs;
-		vector<pair<double, double>> vertex_points_;
-		vector<vector<double>> base_columns;
-		vector<double> base_solution;
-		vector<double> dual_solution;
-		vector<double> capacities_vectors;
-		vector<double> w_row;
-		lemon::ListDigraph graph_;
-		//lemon::ListDigraph::NodeMap<int> strongly_connected_comp_{graph_};   //ERROR azt hiszi fĂźggvĂŠny declarĂĄlok. () helyett {}-et kell tenni https://stackoverflow.com/questions/13734262/c-difference-between-function-declaration-and-object-initialization
-		lemon::ListDigraph::ArcMap<double> capacities_{graph_, false};
-		vector<ListDigraph::Node> auxiliary_source_nodes_;
-		vector<ListDigraph::Node> auxiliary_sink_nodes_;
-		
-		
-		MultiCommodityProb(int k, istream& in = std::cin): source_numb_{k}, all_flow_value{0}, number_of_arcs{0} {
-			ReadInput(in);
-			AdditionalNodesEdge();
-			for(ListDigraph::ArcIt arc(graph_);arc!=INVALID;++arc) ++number_of_arcs;
-			FillBaseColumns();
-			
-			int i = 0; capacities_vectors.resize(number_of_arcs);
-			for(ListDigraph::ArcIt arc(graph_);arc!=INVALID;++arc) capacities_vectors[i++] = capacities_[arc];
-			w_row.resize(number_of_arcs, 0);
-		}
-		
-		void AddVertices(int n) {
-			FOR(i,n) {
-				graph_.addNode();
-			}
-		}
-		
-		template<typename T>
-		double EuclidDist(T a, T b) {
-			return sqrt((a.first-b.first)*(a.first-b.first) + (a.second-b.second)*(a.second-b.second));
-		}
-		
-		void ReadInput(istream& in = std::cin)  {
+	void ReadInput(istream &in = std::cin)
+	{
+		int temp;
+		in >> vertex_numb_;
+		this->AddVertices(vertex_numb_);
+
+		FOR(i, vertex_numb_)
+		{
 			int temp;
-			in >> vertex_numb_;
-			this->AddVertices(vertex_numb_);
-			
-			FOR(i,vertex_numb_) {
-				int temp; in >> temp;
-				double a,b; in >> a >> b;
-				vertex_points_.push_back({a,b});
-			}
-			
-			FOR(i,vertex_numb_) {
-				FOR(j, vertex_numb_) {
-					if(i == j)
-						continue;
-					
-					ListDigraph::Arc t1 = graph_.addArc(graph_.nodeFromId(i),graph_.nodeFromId(j));
-					ListDigraph::Arc t2 = graph_.addArc(graph_.nodeFromId(j),graph_.nodeFromId(i));
-					capacities_[t1] = EuclidDist(vertex_points_[i], vertex_points_[j]);
-					capacities_[t2] = EuclidDist(vertex_points_[i], vertex_points_[j]);
-					
-				}
-			}
-			
+			in >> temp;
+			double a, b;
+			in >> a >> b;
+			vertex_points_.push_back({a, b});
 		}
-		
-		ListDigraph::Arc FindArc(ListDigraph::Node from, ListDigraph::Node to) {
-			ListDigraph::Arc temp;
-			for (ListDigraph::OutArcIt a(graph_, from); a != INVALID; ++a) {
-				if(graph_.target(a) == to) {temp == a; break;}
-			}
-			
-			return temp;
-		}
-		
-		void FillBaseColumns() {
-			FOR(i,number_of_arcs) {
-				vector<double> column; 
-				FOR(j,number_of_arcs) {
-					if(i == j) column.push_back(1);
-					else column.push_back(0);
-				}
-				base_columns.push_back(column);
-			}
-		}
-		
-		void AdditionalNodesEdge() {
-			ListDigraph &g = graph_;
-			int &k = source_numb_;
-			FOR(i,k) {
-				auxiliary_source_nodes_.push_back(graph_.addNode());
-			}
-			/*
-			FOR(i,k) {
-				auxiliary_sink_nodes_.push_back(graph_.addNode());
-			}*/
-			
-			FOR(i,k) {
-				double di = capacities_[FindArc(g.nodeFromId(i), g.nodeFromId(vertex_numb_-i+1))];
-				all_flow_value += di;
-				capacities_[g.addArc(auxiliary_source_nodes_[i], g.nodeFromId(i))] = di;
-				
-				//capacities_[g.addArc(auxiliary_sink_nodes_[i], g.nodeFromId(vertex_numb_-i+1))] = di;
-			}
-		}
-		
-		vector<double> LinearEquationSolver(vector<vector<double>> Columns, vector<double> c) {
-			vector<double> sol; 
-			Lp lp;
-			vector<Lp::Col> x;
-			if(DEBUG) cout << "ZERO\n";
-			FOR(i, (int)Columns.size()) {
-				x.push_back(lp.addCol());
-			}
-			if(DEBUG) cout << "FIRST\n";
-			FOR(i, (int)Columns.size()) {
-				if(DEBUG) cout << endl << i << endl;
-				Lp::Expr temp;
-				FOR(j, (int)Columns.size()) {
-					//if(DEBUG) cout << "COLUMNS value: " << Columns[j][i] << " " ;
-					temp += x[i]*Columns[j][i];
-				}
-				lp.addRow(temp == c[i]);
-			}
-			if(DEBUG) cout << "SECOND\n";
-			Lp::Expr maxNum;
-			for (int i = number_of_arcs; i < Columns.size(); ++i)
+
+		FOR(i, vertex_numb_)
+		{
+			FOR(j, vertex_numb_)
 			{
-				maxNum = maxNum + x[i];
-			}
-			lp.max();
-			lp.obj(maxNum);
-			lp.solve();
-			
-			if (lp.primalType() == Lp::OPTIMAL || lp.primalType() == Lp::FEASIBLE) {
-				FOR(i, (int)Columns.size()) {
-					sol.push_back(lp.primal(x[i]));
+				if (i < j)
+				{
+
+					ListDigraph::Arc t1 = graph_.addArc(graph_.nodeFromId(i), graph_.nodeFromId(j));
+					capacities_[t1] = EuclidDist(vertex_points_[i], vertex_points_[j]);
+					//ListDigraph::Arc t2 = graph_.addArc(graph_.nodeFromId(j), graph_.nodeFromId(i));
+					//capacities_[t2] = EuclidDist(vertex_points_[i], vertex_points_[j]);
 				}
 			}
-			else{
-				cout << "NOT SOLVABLE\n";
-			}
-			
-			return sol;
 		}
-		
-		vector<double> DualSolution() {
-			vector<double> sol; 
-			Lp lp;
-			vector<Lp::Col> x;
-			if(DEBUG) cout << "ZERO\n";
-			FOR(i, number_of_arcs) {
-				x.push_back(lp.addCol());
+	}
+
+	ListDigraph::Arc FindArc(ListDigraph::Node from, ListDigraph::Node to)
+	{
+		ListDigraph::Arc temp;
+		for (ListDigraph::OutArcIt a(graph_, from); a != INVALID; ++a)
+		{
+			if (graph_.target(a) == to)
+			{
+				temp = a;
+				return temp;
 			}
-			if(DEBUG) cout << "FIRST\n";
-			FOR(i,number_of_arcs) {
-				if(DEBUG) cout << endl << i << endl;
-				Lp::Expr temp;
-				FOR(j, number_of_arcs) {
-					//if(DEBUG) cout << "COLUMNS value: " << base_columns[j][i] << " " ;
-					temp += x[i]*base_columns[j][i];
-				}
-				lp.addRow(temp >= w_row[i]);
-			}
-			if(DEBUG) cout << "SECOND\n";
-			Lp::Expr maxNum;
-			FOR(i,number_of_arcs) {
-				maxNum += x[i]*capacities_vectors[i];
-			}
-			
-			lp.min();
-			lp.obj(maxNum);
-			lp.solve();
-			
-			if (lp.primalType() == Lp::OPTIMAL || lp.primalType() == Lp::FEASIBLE) {
-				FOR(i, number_of_arcs) {
-					sol.push_back(lp.primal(x[i]));
-				}
-			}
-			else{
-				cout << "NOT SOLVABLE\n";
-			}
-			
-			return sol;
 		}
-		
-		
-		vector<double> ColumnGener(vector<ListDigraph::Node> &path) {
-			if(DEBUG_CONDENSED) cout << "VAGYOK\n"<< endl;
-			vector<ListDigraph::Arc> arcs;
-			for(int i = (int)path.size()-1; i > 0; ++i) {
-				arcs.push_back(FindArc(path[i], path[i-1]));
-			}
-			if(DEBUG_CONDENSED) cout << "VAGYOK2\n"<< endl;
-			int ln = (int)arcs.size();
-			cout << "ARCS: " << ln << endl;
+	}
+
+	void FillBaseColumns()
+	{
+		FOR(i, number_of_arcs)
+		{
 			vector<double> column;
-			for(ListDigraph::ArcIt arc(graph_);arc!=INVALID;++arc) {
-				bool exist = false;
-				FOR(i,ln) {
-					if(arc == arcs[i]) {
-						exist = true;
-						break;
-					}
-				}
-				if(exist)
-				 column.push_back(1);
-				else column.push_back(0);
+			FOR(j, number_of_arcs)
+			{
+				if (i == j)
+					column.push_back(1);
+				else
+					column.push_back(0);
 			}
-			if(DEBUG_CONDENSED) cout << "VAGYOK5\n"<< endl;
-			cout << std::accumulate(all(column), 0.) << endl;
-			Print_vector(column);
-			if(DEBUG_CONDENSED) cout << "VAGYOK7\n"<< endl;
-			return column;
+			base_columns.push_back(column);
 		}
-		
-		bool ShorterPath(vector<double> &dl) {
-			ListDigraph &g = graph_;
-			if(DEBUG_CONDENSED) cout << "VAGYOK\n"<< endl;
-			bool okay = true;
-			FOR(i,source_numb_) {
-				ListDigraph::Node si = auxiliary_source_nodes_[i];
-				ListDigraph::Node ti = g.nodeFromId(vertex_numb_-i+1);
-				ListDigraph::NodeMap<double> dist(g);
-				ListDigraph::ArcMap<double> length(g);
-				int j = 0;
-				for(ListDigraph::ArcIt arc(graph_);arc!=INVALID;++arc) length[arc] = dl[j++];
-				Dijkstra<ListDigraph, ListDigraph::ArcMap<double>>
-						  ::Create
-						  dijkstra(g, length);
-				//Dijkstra<ListGraph> dijkstra(g, length);
-				dijkstra.distMap(dist);
-				dijkstra.init();
-				dijkstra.addSource(si);
-				dijkstra.start();
-				
-				if(dijkstra.dist(ti) < 1) {
-					if(DEBUG_CONDENSED) cout << "VAGYOK\n"<< endl;
-					vector<ListDigraph::Node> indexes;
-					lemon::ListDigraph::Node curr = ti;
-					while(curr != INVALID) {
-						indexes.push_back(curr);
-						curr = dijkstra.predNode(curr);
-						cout << "RECURSE: " << graph_.id(curr) << ", ";
-					}
-					//indexes.push_back(si);
-					if(DEBUG_CONDENSED) cout << "VAGYOK4\n"<< endl;
-					for(int l = 0; l < (int)indexes.size(); ++l) {cout << graph_.id(indexes[l]) << ", ";}
-					
-					base_columns.push_back(ColumnGener(indexes));
-					okay = false;
+	}
+
+	void AdditionalNodesEdge()
+	{
+		ListDigraph &g = graph_;
+		int &k = source_numb_;
+		FOR(i, k)
+		{
+			auxiliary_source_nodes_.push_back(graph_.addNode());
+		}
+
+		FOR(i, k)
+		{
+			double di = capacities_[FindArc(graph_.nodeFromId(i), graph_.nodeFromId(vertex_numb_ - i - 1))];
+			all_flow_value = all_flow_value + 2 * di;
+			capacities_[graph_.addArc(auxiliary_source_nodes_[i], graph_.nodeFromId(i))] = 2 * di;
+		}
+	}
+
+	vector<double> LinearEquationSolver(vector<vector<double>> Columns, vector<double> c)
+	{
+		cout << endl
+			 << "LOOKING FOR PRIMAL SOLUTION " << endl;
+		vector<double> sol;
+		Lp lp;
+		vector<Lp::Col> x;
+
+		FOR(i, (int)Columns.size())
+		{
+			x.push_back(lp.addCol());
+		}
+		FOR(i, (int)Columns.size())
+		{
+			lp.addRow(x[i] >= 0);
+		}
+
+		FOR(i, number_of_arcs)
+		{
+			if (DEBUG)
+				cout << endl
+					 << i << endl;
+			Lp::Expr temp;
+			FOR(j, (int)Columns.size())
+			{
+				temp += x[j] * Columns[j][i];
+			}
+			lp.addRow(temp == c[i]);
+		}
+
+		Lp::Expr maxNum;
+		for (int i = number_of_arcs; i < (int)Columns.size(); ++i)
+		{
+			maxNum = maxNum + x[i];
+		}
+		lp.max();
+		lp.obj(maxNum);
+
+		lp.solve();
+
+		if (lp.primalType() == Lp::OPTIMAL || lp.primalType() == Lp::FEASIBLE)
+		{
+			cout << "PRIMAL SOLUTION FOUND" << endl;
+			FOR(i, (int)Columns.size())
+			{
+				sol.push_back(lp.primal(x[i]));
+			}
+		}
+		else
+		{
+			cout << "NOT SOLVABLE\n";
+		}
+		return sol;
+	}
+
+	vector<double> DualSolution()
+	{
+		cout << endl
+			 << "LOOKING FOR DUAL SOLUTION " << endl;
+		cout << "Number of new columns: " << (int)base_columns.size() - number_of_arcs << endl;
+
+		vector<double> sol;
+		Lp lp;
+		vector<Lp::Col> y;
+
+		FOR(i, number_of_arcs)
+		{
+			y.push_back(lp.addCol());
+		}
+
+		for (int i = 0; i < (int)base_columns.size(); ++i)
+		{
+			Lp::Expr temp;
+			FOR(j, number_of_arcs)
+			{
+				temp += y[j] * base_columns[i][j];
+			}
+			lp.addRow(temp >= w_row[i]);
+		}
+
+		Lp::Expr maxNum;
+		FOR(i, number_of_arcs)
+		{
+			maxNum += y[i] * capacities_vectors[i];
+		}
+		lp.min();
+		lp.obj(maxNum);
+
+		lp.solve();
+
+		if (lp.primalType() == Lp::OPTIMAL || lp.primalType() == Lp::FEASIBLE)
+		{
+			cout << "DUAL SOLUTION FOUND" << endl;
+			int i = 0;
+			for (ListDigraph::ArcIt arc(graph_); arc != INVALID; ++arc)
+			{
+				sol.push_back(lp.primal(y[i]));
+				i++;
+			}
+		}
+		else
+		{
+			cout << "NOT SOLVABLE\n";
+		}
+		return sol;
+	}
+
+	vector<double> ColumnGener(vector<ListDigraph::Node> &path)
+	{
+		vector<ListDigraph::Arc> arcs;
+		for (int i = (int)path.size() - 1; i > 0; --i)
+		{
+			arcs.push_back(FindArc(path[i], path[i - 1]));
+		}
+		int ln = (int)arcs.size();
+		vector<double> column;
+		for (ListDigraph::ArcIt arc(graph_); arc != INVALID; ++arc)
+		{
+			bool exist = false;
+			FOR(i, ln)
+			{
+				if (arc == arcs[i])
+				{
+					exist = true;
 					break;
 				}
-				if(!okay) break;
 			}
-			return okay;
+			if (exist)
+			{
+				column.push_back(1);
+			}
+			else
+			{
+				column.push_back(0);
+			}
 		}
-		
-		bool OneIterationOfGeneration() {
+		return column;
+	}
+
+	bool ShorterPath(vector<double> &dl)
+	{
+		cout << endl
+			 << endl
+			 << "CHECKING DUAL SOLUTION" << endl;
+		ListDigraph &g = graph_;
+		bool okay = true;
+		FOR(i, source_numb_)
+		{
+			ListDigraph::Node si = auxiliary_source_nodes_[i];
+			ListDigraph::Node ti = g.nodeFromId(vertex_numb_ - i - 1);
+			ListDigraph::NodeMap<double> dist(g);
+			ListDigraph::ArcMap<double> length(g);
+			int j = 0;
+			for (ListDigraph::ArcIt arc(graph_); arc != INVALID; ++arc)
+			{
+				length[arc] = dl[j++];
+			}
+			Dijkstra<ListDigraph, ListDigraph::ArcMap<double>>::Create
+				dijkstra(g, length);
+			dijkstra.distMap(dist);
+			dijkstra.init();
+			dijkstra.addSource(si);
+			dijkstra.start();
+
+			if (dijkstra.dist(ti) < 1)
+			{
+				vector<ListDigraph::Node> indexes;
+				lemon::ListDigraph::Node curr = ti;
+				while (curr != INVALID)
+				{
+					indexes.push_back(curr);
+					// cout << "RECURSE: " << graph_.id(curr) << ", ";
+					curr = dijkstra.predNode(curr);
+				}
+
+				cout << "New path: ";
+				for (int l = 0; l < (int)indexes.size(); ++l)
+				{
+					cout << graph_.id(indexes[l]) << ", ";
+				}
+
+				base_columns.push_back(ColumnGener(indexes));
+				w_row.push_back(1);
+				okay = false;
+				break;
+			}
+			if (!okay)
+				break;
+		}
+		cout << endl
+			 << "DUAL SOLUTION CHECKED, OUTCOME:" << okay << endl;
+		return okay;
+	}
+
+	bool MCPWithColumnGeneration()
+	{
+		/*for (ListDigraph::ArcIt arc(graph_); arc != INVALID; ++arc)
+		{
+			cout << "arcid: " << graph_.id(arc) << "= " << graph_.id(graph_.source(arc))
+				 << " to node " << graph_.id(graph_.target(arc)) << "cap: " << capacities_[arc] << ";";
+		}
+		cout << "\n\n\n";*/
+		bool ready = false;
+		while (!ready)
+		{
 			base_solution = LinearEquationSolver(base_columns, capacities_vectors);
-			if(DEBUG_VALUE) {cout << "BASE SOLUTION: \n"; Print_vector(base_solution);}
+			cout << "BASE SOLUTION: " << endl;
+			cout << base_solution.size() << ' ';
+			Print_vector(base_solution);
+
 			dual_solution = DualSolution();
-			if(DEBUG_VALUE) {cout << "DUAL SOLUTION: \n"; Print_vector(dual_solution);}
-			bool okay = ShorterPath(dual_solution);
-			return okay;			
+			cout << "DUAL SOLUTION: ";
+			Print_vector(dual_solution);
+
+			double solvalue = 0;
+			for (int i = number_of_arcs; i < (int)base_columns.size(); i++)
+			{
+				solvalue = solvalue + base_solution[i];
+			}
+			cout << endl
+				 << "Current value: " << solvalue << ". Goal:" << all_flow_value << "." << endl
+				 << endl;
+
+			ready = ShorterPath(dual_solution);
 		}
-		
-		
+
+		base_solution = LinearEquationSolver(base_columns, capacities_vectors);
+		double solvalue = 0;
+		for (int i = number_of_arcs; i < (int)base_columns.size(); i++)
+		{
+			solvalue = solvalue + base_solution[i];
+		}
+
+		Print_vector(base_solution);
+		cout << endl
+			 << "Current value: " << solvalue << ". Goal:" << all_flow_value << "." << endl
+			 << endl;
+
+		return 0;
+	}
 };
 
-
-
-int main() {
+int main()
+{
 	ifstream fin("berlin52.txt");
-	
-	int k = 10;
+
+	int k;
+	cout << "Number of source nodes: ";
+	cin >> k;
+	cout << std::endl;
+
 	MultiCommodityProb Test(k, fin);
 	cout << Test.all_flow_value << endl;
-	Test.OneIterationOfGeneration();
-	Test.OneIterationOfGeneration();
-	/*
-	vector<vector<double>> columns;
-	columns.push_back(vector<double> {1, 0});
-	columns.push_back(vector<double> {0, 1});
-	vector<double> c{2,3};
-	Print_vector(Test.LinearEquationSolver(columns, c));*/
+
+	Test.MCPWithColumnGeneration();
 }
